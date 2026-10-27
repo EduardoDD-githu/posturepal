@@ -62,7 +62,7 @@ const el = {
   ringFill: $("ring-fill"), scoreValue: $("score-value"), scoreState: $("score-state"), scoreHint: $("score-hint"),
   mGood: $("m-good"), mAlerts: $("m-alerts"), mStreak: $("m-streak"), mRatio: $("m-ratio"), mTilt: $("m-tilt"), mLean: $("m-lean"),
   calibrateBtn: $("calibrate-btn"), pauseBtn: $("pause-btn"), pauseLabel: $("pause-label"), pauseIcon: $("pause-icon"),
-  pipBtn: $("pip-btn"), soundBtn: $("sound-btn"), soundLabel: $("sound-label"), soundWaves: $("sound-waves"),
+  pipBtn: $("pip-btn"), flipBtn: $("flip-btn"), notifyRow: $("notify-row"), soundBtn: $("sound-btn"), soundLabel: $("sound-label"), soundWaves: $("sound-waves"),
   sensitivity: $("sensitivity"), sensitivityOut: $("sensitivity-out"),
   delay: $("delay"), delayOut: $("delay-out"), volume: $("volume"), volumeOut: $("volume-out"),
   breakSelect: $("break-select"), notifyToggle: $("notify-toggle"), fps: $("fps"),
@@ -90,6 +90,9 @@ let frameScheduled = false;
 let lastVideoTime = -1;
 let lastDetectTs = 0;
 let pipWin = null;
+let facingMode = "user";
+// En celulares pedimos menos resolución (el modelo no necesita más) y así va más fluido
+const IS_TOUCH = window.matchMedia("(pointer: coarse)").matches;
 let wakeLock = null;
 let audioCtx = null;
 let toastTimer = 0;
@@ -200,12 +203,36 @@ async function loadModel() {
 }
 
 async function openCamera() {
+  stream?.getTracks().forEach((t) => t.stop());
+  const size = IS_TOUCH ? { width: { ideal: 640 }, height: { ideal: 480 } } : { width: { ideal: 1280 }, height: { ideal: 720 } };
   stream = await navigator.mediaDevices.getUserMedia({
     audio: false,
-    video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } },
+    video: { facingMode, ...size, frameRate: { ideal: 30 } },
   });
   el.video.srcObject = stream;
   await el.video.play();
+  lastVideoTime = -1;
+  // Efecto espejo solo con la cámara frontal
+  el.stage.classList.toggle("mirror", facingMode === "user");
+  // El recuadro de la cámara toma la forma real del video (vertical en celulares)
+  const card = el.stageHome.closest(".stage-card");
+  if (el.video.videoWidth) card.style.setProperty("--ar", `${el.video.videoWidth} / ${el.video.videoHeight}`);
+  // Mostrar "Cámara" solo si hay más de una
+  const devices = await navigator.mediaDevices.enumerateDevices().catch(() => []);
+  el.flipBtn.hidden = devices.filter((d) => d.kind === "videoinput").length < 2;
+}
+
+async function flipCamera() {
+  facingMode = facingMode === "user" ? "environment" : "user";
+  try {
+    await openCamera();
+    smoothedRatio = null;
+    showToast(facingMode === "user" ? "Cámara frontal" : "Cámara trasera");
+  } catch {
+    facingMode = facingMode === "user" ? "environment" : "user";
+    await openCamera().catch(() => {});
+    showToast("No hay otra cámara disponible.");
+  }
 }
 
 function cameraErrorMessage(err) {
@@ -828,6 +855,10 @@ el.startBtn.addEventListener("click", start);
 el.calibrateBtn.addEventListener("click", startCalibration);
 el.pauseBtn.addEventListener("click", () => togglePause());
 el.pipBtn.addEventListener("click", togglePip);
+el.flipBtn.addEventListener("click", flipCamera);
+el.video.addEventListener("resize", () => {
+  if (el.video.videoWidth) el.stageHome.closest(".stage-card").style.setProperty("--ar", `${el.video.videoWidth} / ${el.video.videoHeight}`);
+});
 el.pipReturnBtn.addEventListener("click", () => pipWin?.close());
 el.soundBtn.addEventListener("click", () => {
   settings.sound = !settings.sound;
@@ -919,6 +950,10 @@ el.installBtn.addEventListener("click", async () => {
 if ("serviceWorker" in navigator && window.isSecureContext) {
   navigator.serviceWorker.register("sw.js").catch((err) => console.warn("SW no registrado:", err));
 }
+
+// Ocultar lo que este navegador no soporta (p. ej. en celulares)
+el.pipBtn.hidden = !("documentPictureInPicture" in window);
+el.notifyRow.hidden = !("Notification" in window);
 
 renderSettings();
 startDemo();

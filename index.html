@@ -10,7 +10,7 @@
   <link rel="icon" id="favicon" href="icons/icon-192.png" type="image/png">
   <link rel="preload" href="fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/styles.css?v=5">
 </head>
 <body data-state="idle">
   <div class="ambient" aria-hidden="true"></div>
@@ -120,7 +120,7 @@
         <button id="help-btn" class="btn btn-quiet btn-sm" type="button" aria-keyshortcuts="?">
           Atajos <kbd>?</kbd>
         </button>
-        <button id="end-btn" class="btn btn-quiet btn-sm" type="button">Terminar sesión</button>
+        <button id="end-btn" class="btn btn-quiet btn-sm" type="button">Terminar<span class="hide-sm">&nbsp;sesión</span></button>
       </nav>
     </header>
 
@@ -227,6 +227,10 @@
               <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><rect x="12" y="11" width="7" height="6" rx="1" class="fill"/></svg>
               Flotante
             </button>
+            <button id="flip-btn" class="btn" type="button" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h11l-3-3M20 17H9l3 3"/></svg>
+              Cámara
+            </button>
             <button id="sound-btn" class="btn" type="button" aria-pressed="true" aria-keyshortcuts="S">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path id="sound-waves" d="M16 9a4 4 0 010 6M18.5 6.5a8 8 0 010 11"/></svg>
               <span id="sound-label">Sonido</span>
@@ -258,7 +262,7 @@
               <option value="60">Cada 60 min</option>
             </select>
           </div>
-          <label class="toggle">
+          <label class="toggle" id="notify-row">
             <input type="checkbox" id="notify-toggle">
             <span class="toggle-ui" aria-hidden="true"></span>
             <span>Notificaciones de escritorio<small>Te avisa aunque estés en otra ventana</small></span>
@@ -316,6 +320,6 @@
   <div id="sr-announcer" class="sr-only" role="status" aria-live="polite"></div>
   <div id="sr-alert" class="sr-only" role="alert"></div>
 
-  <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/app.js?v=3"></script>
 </body>
 </html>
