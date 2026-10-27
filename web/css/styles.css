@@ -357,7 +357,7 @@ kbd {
 
 /* ---------- Controles ---------- */
 .controls-card { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
-.btn-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.btn-row { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; }
 .btn-row .btn { padding: 0 8px; gap: 7px; font-size: 13px; }
 
 /* ---------- Ajustes ---------- */
@@ -445,10 +445,76 @@ body.pip .gauge-label, body.pip .hud-corners { display: none; }
 
 /* ---------- Pantallas más angostas ---------- */
 @media (max-width: 1100px) {
-  .hero { grid-template-columns: 1fr; }
+  .hero { grid-template-columns: 1fr; gap: 40px; }
   .how { grid-template-columns: repeat(2, 1fr); }
-  .app { height: auto; min-height: 100vh; }
-  .dashboard { grid-template-columns: 1fr; }
-  .stage-card { min-height: 56vw; }
-  .col-side { overflow: visible; }
+  .app { height: auto; min-height: 100dvh; }
+  /* Una sola columna: cámara, puntaje, controles, métricas, gráfico y ajustes */
+  .dashboard { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .col-main, .col-side { display: contents; }
+  .stage-card { order: 1; flex: none; min-height: 0; aspect-ratio: var(--ar, 4 / 3); max-height: 72dvh; }
+  .score-card { order: 2; }
+  .controls-card { order: 3; }
+  .metrics { order: 4; }
+  .chart-card { order: 5; }
+  .settings-card { order: 6; }
+  .fps { order: 7; }
+}
+
+/* ---------- Celulares ---------- */
+@media (max-width: 640px) {
+  body { font-size: 16px; }
+  .topbar { height: 56px; padding: 0 16px; padding-top: env(safe-area-inset-top); box-sizing: content-box; }
+  .hide-sm, #help-btn, #session-label, .app .brand span { display: none; }
+  .topbar { gap: 10px; }
+
+  .hero { padding: 24px 16px 40px; }
+  .hero h1 { font-size: clamp(38px, 11vw, 52px); }
+  .lead { font-size: 16px; margin: 18px 0 24px; }
+  .eyebrow { font-size: 11px; letter-spacing: .08em; }
+  .hero-cta .btn-lg { width: 100%; }
+  .chips { margin-top: 24px; }
+  .how { grid-template-columns: 1fr; margin: 0 16px; }
+
+  .dashboard { padding: 12px 12px max(16px, env(safe-area-inset-bottom)); }
+  .stage-card { padding: 4px; border-radius: 16px; }
+  .stage-home { inset: 4px; }
+  .status { top: 12px; max-width: calc(100% - 64px); padding: 8px 12px 8px 11px; gap: 8px; font-size: 14px; }
+  #status-text { overflow: hidden; text-overflow: ellipsis; }
+  .status-timer { font-size: 12px; padding: 2px 7px; }
+  .status-dot { width: 9px; height: 9px; flex: none; }
+  .gauge { right: 12px; height: 46%; }
+  .gauge-label, .hud-corners { display: none; }
+  .countdown-ring { width: 130px; height: 130px; }
+  .countdown-num { font-size: 52px; }
+  .countdown-msg { font-size: 16px; text-align: center; }
+
+  .score-card { padding: 14px; gap: 14px; }
+  .score-ring { width: 104px; height: 104px; }
+  .score-value { font-size: 32px; }
+  .score-state { font-size: 18px; }
+
+  .m-value { font-size: 15px; }
+  .metric { padding: 10px 10px 9px; }
+
+  .chart-card { padding: 14px 14px 12px; }
+  .card-head { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .legend { gap: 12px; font-size: 11px; flex-wrap: wrap; }
+  .chart { height: 110px; }
+
+  select { font-size: 16px; }          /* evita el zoom automático de iPhone */
+  .settings-card { padding: 4px 14px 12px; }
+
+  .toast { left: 16px; right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); transform: none; text-align: center; }
+  @keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+  .break-banner { left: 16px; right: 16px; bottom: 16px; max-width: none; }
+  .dialog { padding: 22px; }
+  .report-grid { grid-template-columns: repeat(2, 1fr); }
+  .dialog-actions .btn { flex: 1 1 auto; }
+  .ambient { filter: none; opacity: .7; }
+}
+
+/* Pantallas táctiles: sin pistas de teclado */
+@media (hover: none) and (pointer: coarse) {
+  kbd, #help-btn { display: none !important; }
+  .btn { min-height: 46px; }
 }
