@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PosturePal — Cartel con QR</title>
+  <style>
+    /* Cartel para imprimir en la feria de ciencias (hoja carta/A4) */
+    :root { --accent: #16a36a; --text: #111; --muted: #555; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #e5e7eb; color: var(--text); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    .sheet {
+      background: #fff; width: min(100%, 210mm); min-height: 297mm; margin: 16px auto; padding: 18mm 16mm;
+      display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10mm;
+    }
+    h1 { margin: 0; font-size: 44pt; color: var(--accent); letter-spacing: -.02em; }
+    .sub { margin: 0; font-size: 18pt; font-weight: 600; }
+    #qr { padding: 6mm; border: 3px solid var(--accent); border-radius: 8mm; }
+    #qr img, #qr canvas { width: min(90mm, 70vw) !important; height: min(90mm, 70vw) !important; display: block; }
+    .url { font-family: ui-monospace, Consolas, monospace; font-size: 14pt; word-break: break-all; color: var(--muted); }
+    ol { text-align: left; font-size: 15pt; line-height: 1.6; margin: 0; padding-left: 1.4em; }
+    .note { font-size: 11pt; color: var(--muted); max-width: 150mm; }
+    .tools { max-width: 210mm; margin: 16px auto 0; padding: 0 16px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .tools input { flex: 1; min-width: 200px; font: inherit; padding: 8px; }
+    .tools button { font: inherit; padding: 8px 14px; }
+    @media print {
+      body { background: #fff; }
+      .tools { display: none; }
+      .sheet { margin: 0; width: auto; min-height: 0; }
+      @page { margin: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="tools">
+    <label for="url-input" class="sr">Dirección:</label>
+    <input id="url-input" type="url">
+    <button id="print-btn" type="button">Imprimir</button>
+  </div>
+
+  <main class="sheet">
+    <h1>PosturePal</h1>
+    <p class="sub">¿Te estás encorvando? ¡Pruébalo en tu celular!</p>
+    <div id="qr" role="img" aria-label="Código QR para abrir PosturePal"></div>
+    <p class="url" id="url-text"></p>
+    <ol>
+      <li>Escanea el código con la cámara de tu celular.</li>
+      <li>Toca <strong>Iniciar cámara</strong> y permite el acceso.</li>
+      <li>Siéntate derecho y toca <strong>Calibrar</strong>.</li>
+      <li>Encórvate… ¡y escucha la alerta!</li>
+    </ol>
+    <p class="note">Funciona en iPhone (Safari) y Android (Chrome). El video se procesa solo en tu teléfono con inteligencia artificial (MediaPipe Pose); no se envía ni se guarda en ningún lado.</p>
+  </main>
+
+  <script src="vendor/qrcode.min.js"></script>
+  <script>
+    // Por defecto usa la dirección de esta misma página (sin "cartel.html")
+    const input = document.getElementById("url-input");
+    input.value = new URL("./", location.href).href;
+    function renderQR() {
+      const box = document.getElementById("qr");
+      box.innerHTML = "";
+      new QRCode(box, { text: input.value, width: 512, height: 512, correctLevel: QRCode.CorrectLevel.M });
+      document.getElementById("url-text").textContent = input.value;
+    }
+    input.addEventListener("change", renderQR);
+    document.getElementById("print-btn").addEventListener("click", () => window.print());
+    renderQR();
+  </script>
+</body>
+</html>
