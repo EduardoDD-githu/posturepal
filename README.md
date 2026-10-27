@@ -31,6 +31,23 @@ Todo el procesamiento ocurre **dentro de tu computadora** (WebAssembly + GPU). E
 
 ---
 
+## Sitio publicado
+
+👉 **https://eduardodd-githu.github.io/posturepal/**
+
+Repositorio: <https://github.com/EduardoDD-githu/posturepal>. GitHub Pages publica la rama `gh-pages`, que contiene solo la carpeta `web/`.
+
+### Actualizar el sitio después de cambiar algo
+
+```bash
+git add -A
+git commit -m "Describe el cambio"
+git push origin main
+git subtree push --prefix web origin gh-pages
+```
+
+En 1–2 minutos el sitio muestra la versión nueva.
+
 ## Publicarla gratis (≈10 minutos) — GitHub Pages
 
 La cámara del celular **solo funciona en páginas `https://`**, por eso hay que publicarla (no basta abrir el archivo). GitHub Pages es gratis, permanente y ya trae https.
