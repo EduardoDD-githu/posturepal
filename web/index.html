@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PosturePal</title>
+  <meta name="description" content="Detector de mala postura en tiempo real con inteligencia artificial, directamente en tu navegador.">
+  <meta name="theme-color" content="#07090c">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" id="favicon" href="icons/icon-192.png" type="image/png">
+  <link rel="preload" href="fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body data-state="idle">
+  <div class="ambient" aria-hidden="true"></div>
+
+  <!-- =========================== PORTADA =========================== -->
+  <main id="intro" class="intro">
+    <header class="topbar">
+      <div class="brand">
+        <img src="icons/icon-192.png" alt="" width="28" height="28">
+        <span>PosturePal</span>
+      </div>
+      <nav class="topbar-actions">
+        <button id="install-btn" class="btn btn-quiet btn-sm" type="button" hidden>Instalar app</button>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="dot"></span> Visión por computadora · 100 % en tu navegador</p>
+        <h1>Tu postura,<br><em>medida en tiempo real.</em></h1>
+        <p class="lead">PosturePal usa inteligencia artificial para encontrar tu cabeza y tus hombros 30 veces por segundo y te avisa en cuanto empiezas a encorvarte, aunque estés trabajando en otra ventana.</p>
+
+        <div class="hero-cta">
+          <button id="start-btn" class="btn btn-primary btn-lg" type="button">
+            Iniciar sesión de postura
+            <kbd>Enter</kbd>
+          </button>
+          <p id="load-status" class="load-status" role="status" aria-live="polite"></p>
+        </div>
+        <p id="error-box" class="error-box" role="alert" hidden></p>
+
+        <ul class="chips" aria-label="Características">
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v6c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6l7-3z"/></svg> El video nunca sale de tu equipo</li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg> ~30 FPS con aceleración GPU</li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H4zM9 20h6M12 16v4"/></svg> Funciona sin instalar nada</li>
+        </ul>
+      </div>
+
+      <figure class="hero-demo" aria-label="Animación: al encorvarse, la nariz baja respecto a los hombros y el ratio disminuye">
+        <div class="demo-frame">
+          <div class="demo-chip" id="demo-chip"><span class="chip-dot"></span><span id="demo-chip-text">Postura correcta</span></div>
+          <svg id="demo-svg" viewBox="0 0 400 320" aria-hidden="true">
+            <defs>
+              <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                <path d="M20 0H0V20" fill="none" stroke="currentColor" stroke-opacity=".06"/>
+              </pattern>
+            </defs>
+            <rect width="400" height="320" fill="url(#grid)"/>
+            <path id="demo-body" class="demo-body" d=""/>
+            <circle id="demo-head" class="demo-head" cx="200" cy="100" r="38"/>
+            <line id="demo-shoulders" class="demo-measure" x1="120" y1="200" x2="280" y2="200"/>
+            <line id="demo-neck" class="demo-measure" x1="200" y1="110" x2="200" y2="200"/>
+            <circle id="demo-nose" class="demo-point" cx="200" cy="110" r="6"/>
+            <circle id="demo-ls" class="demo-point" cx="120" cy="200" r="6"/>
+            <circle id="demo-rs" class="demo-point" cx="280" cy="200" r="6"/>
+            <circle id="demo-mid" class="demo-mid" cx="200" cy="200" r="5"/>
+            <text id="demo-h-label" class="demo-label" x="212" y="160">h</text>
+            <text class="demo-label" x="160" y="178">w</text>
+          </svg>
+          <div class="demo-readout">
+            <div><span class="label">ratio = h ÷ w</span><span class="mono" id="demo-ratio">0.56</span></div>
+            <div class="demo-bar"><span id="demo-bar-fill"></span><i class="demo-threshold"></i></div>
+          </div>
+        </div>
+        <figcaption>Al encorvarte, la cabeza cae y la distancia <b>h</b> entre nariz y hombros se reduce. Dividirla entre el ancho de hombros <b>w</b> hace que la medida no dependa de tu distancia a la cámara.</figcaption>
+      </figure>
+    </section>
+
+    <section class="how" aria-labelledby="how-title">
+      <h2 id="how-title" class="sr-only">Cómo funciona</h2>
+      <article>
+        <span class="how-num">01</span>
+        <h3>Detecta</h3>
+        <p>MediaPipe Pose localiza 33 puntos del cuerpo en cada imagen de tu cámara web.</p>
+      </article>
+      <article>
+        <span class="how-num">02</span>
+        <h3>Mide</h3>
+        <p>Calcula el ratio entre la altura de tu cuello y el ancho de tus hombros, más la inclinación de hombros y cabeza.</p>
+      </article>
+      <article>
+        <span class="how-num">03</span>
+        <h3>Calibra</h3>
+        <p>Guarda tu postura ideal como referencia. La alerta se ajusta a tu cuerpo, no a un promedio.</p>
+      </article>
+      <article>
+        <span class="how-num">04</span>
+        <h3>Alerta</h3>
+        <p>Sonido, notificación de escritorio y ventana flotante para que te enteres aunque estés en otra app.</p>
+      </article>
+    </section>
+  </main>
+
+  <!-- =========================== PANEL =========================== -->
+  <div id="app" class="app" hidden>
+    <header class="topbar">
+      <div class="brand">
+        <img src="icons/icon-192.png" alt="" width="28" height="28">
+        <span>PosturePal</span>
+      </div>
+      <div class="session-pill" id="session-pill">
+        <span class="rec-dot" aria-hidden="true"></span>
+        <span id="session-label">Sesión</span>
+        <span class="mono" id="session-time">00:00</span>
+      </div>
+      <nav class="topbar-actions">
+        <button id="help-btn" class="btn btn-quiet btn-sm" type="button" aria-keyshortcuts="?">
+          Atajos <kbd>?</kbd>
+        </button>
+        <button id="end-btn" class="btn btn-quiet btn-sm" type="button">Terminar sesión</button>
+      </nav>
+    </header>
+
+    <main class="dashboard">
+      <!-- Columna izquierda: cámara + gráfico -->
+      <section class="col-main">
+        <div class="card stage-card">
+          <div id="stage-home" class="stage-home">
+            <div id="stage" class="stage mirror">
+              <video id="video" playsinline muted autoplay aria-hidden="true"></video>
+              <canvas id="overlay" aria-hidden="true"></canvas>
+              <div class="hud-corners" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+
+              <div id="status" class="status" data-state="NO_USER">
+                <span class="status-dot" aria-hidden="true"></span>
+                <span id="status-text">Buscando tu cabeza y hombros…</span>
+                <span id="bad-timer" class="status-timer mono" hidden></span>
+              </div>
+
+              <div class="gauge" aria-hidden="true">
+                <div class="gauge-track">
+                  <div class="gauge-zone" id="gauge-zone"></div>
+                  <div class="gauge-baseline" id="gauge-baseline"></div>
+                  <div class="gauge-threshold" id="gauge-threshold"></div>
+                  <div class="gauge-marker" id="gauge-marker"></div>
+                </div>
+                <span class="gauge-label">ratio</span>
+              </div>
+
+              <div id="countdown" class="countdown" hidden aria-hidden="true">
+                <svg class="countdown-ring" viewBox="0 0 120 120"><circle cx="60" cy="60" r="54"/><circle id="countdown-arc" cx="60" cy="60" r="54"/></svg>
+                <div class="countdown-num mono" id="countdown-num">3</div>
+                <div class="countdown-msg">Siéntate derecho y mira al frente</div>
+              </div>
+
+              <div id="paused-overlay" class="paused-overlay" hidden>
+                <span>En pausa</span>
+                <small>Pulsa <kbd>Espacio</kbd> para continuar</small>
+              </div>
+            </div>
+            <div id="pip-placeholder" class="pip-placeholder" hidden>
+              <p>La cámara está en la <b>ventana flotante</b>.</p>
+              <button id="pip-return-btn" class="btn btn-quiet btn-sm" type="button">Traerla de vuelta</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card chart-card">
+          <div class="card-head">
+            <h2>Últimos 60 segundos</h2>
+            <div class="legend" aria-hidden="true">
+              <span><i class="lg-line"></i> Ratio</span>
+              <span><i class="lg-dash"></i> Umbral</span>
+              <span><i class="lg-base"></i> Tu postura ideal</span>
+            </div>
+          </div>
+          <canvas id="chart" class="chart" role="img" aria-label="Gráfico del ratio de postura en los últimos 60 segundos"></canvas>
+          <div class="timeline-wrap">
+            <span class="timeline-label">Sesión</span>
+            <canvas id="timeline" class="timeline" role="img" aria-label="Línea de tiempo de la sesión: verde postura correcta, rojo mala postura"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Columna derecha: puntaje, métricas, controles -->
+      <aside class="col-side">
+        <div class="card score-card">
+          <div class="score-ring" id="score-ring">
+            <svg viewBox="0 0 200 200" aria-hidden="true">
+              <circle class="ring-track" cx="100" cy="100" r="86"/>
+              <circle class="ring-fill" id="ring-fill" cx="100" cy="100" r="86"/>
+            </svg>
+            <div class="score-center">
+              <span class="score-value mono" id="score-value">--</span>
+              <span class="score-caption">puntaje</span>
+            </div>
+          </div>
+          <div class="score-side">
+            <p class="score-state" id="score-state">Sin datos</p>
+            <p class="score-hint" id="score-hint">Siéntate frente a la cámara para empezar.</p>
+          </div>
+        </div>
+
+        <div class="metrics">
+          <div class="metric"><span class="m-label">Postura correcta</span><span class="m-value mono" id="m-good">--</span></div>
+          <div class="metric"><span class="m-label">Alertas</span><span class="m-value mono" id="m-alerts">0</span></div>
+          <div class="metric"><span class="m-label">Mejor racha</span><span class="m-value mono" id="m-streak">0:00</span></div>
+          <div class="metric"><span class="m-label">Ratio / umbral</span><span class="m-value mono" id="m-ratio">--</span></div>
+          <div class="metric"><span class="m-label">Hombros</span><span class="m-value mono" id="m-tilt">--</span></div>
+          <div class="metric"><span class="m-label">Cabeza lateral</span><span class="m-value mono" id="m-lean">--</span></div>
+        </div>
+
+        <div class="card controls-card">
+          <button id="calibrate-btn" class="btn btn-primary btn-block" type="button" aria-keyshortcuts="C">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3"/></svg>
+            Calibrar postura <kbd>C</kbd>
+          </button>
+          <div class="btn-row">
+            <button id="pause-btn" class="btn" type="button" aria-pressed="false" aria-keyshortcuts="Space">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path id="pause-icon" d="M8 5v14M16 5v14"/></svg>
+              <span id="pause-label">Pausar</span>
+            </button>
+            <button id="pip-btn" class="btn" type="button" aria-keyshortcuts="F">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><rect x="12" y="11" width="7" height="6" rx="1" class="fill"/></svg>
+              Flotante
+            </button>
+            <button id="sound-btn" class="btn" type="button" aria-pressed="true" aria-keyshortcuts="S">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path id="sound-waves" d="M16 9a4 4 0 010 6M18.5 6.5a8 8 0 010 11"/></svg>
+              <span id="sound-label">Sonido</span>
+            </button>
+          </div>
+        </div>
+
+        <details class="card settings-card" open>
+          <summary><h2>Ajustes</h2></summary>
+          <div class="setting">
+            <div class="setting-head"><label for="sensitivity">Sensibilidad</label><output id="sensitivity-out" for="sensitivity">Media</output></div>
+            <input type="range" id="sensitivity" min="0" max="100" step="5" value="50">
+          </div>
+          <div class="setting">
+            <div class="setting-head"><label for="delay">Avisar después de</label><output id="delay-out" for="delay">2 s</output></div>
+            <input type="range" id="delay" min="1" max="10" step="1" value="2">
+          </div>
+          <div class="setting">
+            <div class="setting-head"><label for="volume">Volumen</label><output id="volume-out" for="volume">60 %</output></div>
+            <input type="range" id="volume" min="0" max="100" step="5" value="60">
+          </div>
+          <div class="setting">
+            <div class="setting-head"><label for="break-select">Recordar pausa activa</label></div>
+            <select id="break-select">
+              <option value="0">Nunca</option>
+              <option value="20">Cada 20 min</option>
+              <option value="30">Cada 30 min</option>
+              <option value="45">Cada 45 min</option>
+              <option value="60">Cada 60 min</option>
+            </select>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="notify-toggle">
+            <span class="toggle-ui" aria-hidden="true"></span>
+            <span>Notificaciones de escritorio<small>Te avisa aunque estés en otra ventana</small></span>
+          </label>
+        </details>
+
+        <p class="fps mono" id="fps" aria-hidden="true"></p>
+      </aside>
+    </main>
+
+    <div id="toast" class="toast" hidden></div>
+    <div id="break-banner" class="break-banner" role="alertdialog" aria-labelledby="break-title" hidden>
+      <div>
+        <strong id="break-title">Hora de una pausa activa</strong>
+        <p>Levántate, estira el cuello y los hombros durante un minuto.</p>
+      </div>
+      <button id="break-done" class="btn btn-primary btn-sm" type="button">Listo</button>
+    </div>
+  </div>
+
+  <!-- =========================== DIÁLOGOS =========================== -->
+  <dialog id="help-dialog" class="dialog" aria-labelledby="help-title">
+    <h2 id="help-title">Atajos de teclado</h2>
+    <dl class="shortcuts">
+      <dt><kbd>C</kbd></dt><dd>Calibrar postura</dd>
+      <dt><kbd>Espacio</kbd></dt><dd>Pausar / continuar</dd>
+      <dt><kbd>F</kbd></dt><dd>Ventana flotante</dd>
+      <dt><kbd>S</kbd></dt><dd>Sonido sí / no</dd>
+      <dt><kbd>?</kbd></dt><dd>Mostrar esta ayuda</dd>
+      <dt><kbd>Esc</kbd></dt><dd>Cerrar diálogos</dd>
+    </dl>
+    <form method="dialog"><button class="btn btn-block" type="submit">Cerrar</button></form>
+  </dialog>
+
+  <dialog id="report-dialog" class="dialog dialog-wide" aria-labelledby="report-title">
+    <p class="eyebrow">Resumen</p>
+    <h2 id="report-title">Tu sesión de postura</h2>
+    <div class="report-grid">
+      <div class="metric"><span class="m-label">Duración</span><span class="m-value mono" id="r-duration">--</span></div>
+      <div class="metric"><span class="m-label">Postura correcta</span><span class="m-value mono" id="r-good">--</span></div>
+      <div class="metric"><span class="m-label">Puntaje promedio</span><span class="m-value mono" id="r-score">--</span></div>
+      <div class="metric"><span class="m-label">Alertas</span><span class="m-value mono" id="r-alerts">--</span></div>
+      <div class="metric"><span class="m-label">Mejor racha</span><span class="m-value mono" id="r-streak">--</span></div>
+      <div class="metric"><span class="m-label">Fuera de cámara</span><span class="m-value mono" id="r-away">--</span></div>
+    </div>
+    <canvas id="report-chart" class="report-chart" role="img" aria-label="Gráfico del ratio durante toda la sesión"></canvas>
+    <p class="report-verdict" id="r-verdict"></p>
+    <div class="dialog-actions">
+      <button id="csv-btn" class="btn" type="button">Descargar datos (CSV)</button>
+      <button id="resume-btn" class="btn" type="button">Seguir midiendo</button>
+      <button id="new-btn" class="btn btn-primary" type="button">Nueva sesión</button>
+    </div>
+  </dialog>
+
+  <div id="sr-announcer" class="sr-only" role="status" aria-live="polite"></div>
+  <div id="sr-alert" class="sr-only" role="alert"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
