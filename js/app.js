@@ -140,13 +140,23 @@ function saveSettings() {
 
 const baseline = () => settings.baseline ?? DEFAULT_BASELINE;
 const calibrationFactor = () => FACTOR_MIN + (FACTOR_MAX - FACTOR_MIN) * (settings.sensitivity / 100);
-const threshold = () => baseline() * calibrationFactor();
+// La alarma salta cuando el puntaje baja de este valor (margen amplio: avisa
+// en cuanto empiezas a hundirte, no solo cuando ya estás muy encorvado).
+const ALERT_SCORE = 80;
+// Postura que se considera "muy encorvada" (puntaje 50) según la sensibilidad.
+const slouchLimit = () => baseline() * calibrationFactor();
 
-/** Puntaje 0-100: 100 = tu postura calibrada, 50 = justo en el umbral. */
+/** Puntaje 0-100: 100 = tu postura calibrada, 50 = muy encorvado. */
 function postureScore(ratio) {
-  const thr = threshold(), base = baseline();
-  return Math.max(0, Math.min(100, 50 + 50 * (ratio - thr) / (base - thr)));
+  const lim = slouchLimit(), base = baseline();
+  return Math.max(0, Math.min(100, 50 + 50 * (ratio - lim) / (base - lim)));
 }
+
+/** Ratio en el que el puntaje vale ALERT_SCORE: por debajo, mala postura. */
+const threshold = () => {
+  const lim = slouchLimit(), base = baseline();
+  return lim + ((ALERT_SCORE - 50) / 50) * (base - lim);
+};
 
 // =============================================================================
 // LÓGICA DE CÁLCULO DE POSTURA
@@ -615,10 +625,10 @@ function render(badElapsed, now) {
   } else if (score === null) {
     el.scoreState.textContent = "Sin datos";
     el.scoreHint.textContent = "Ajusta la cámara para que se vean tu cabeza y tus hombros.";
-  } else if (score >= 85) {
+  } else if (score >= 92) {
     el.scoreState.textContent = "Excelente";
     el.scoreHint.textContent = "Espalda recta y cabeza arriba. ¡Sigue así!";
-  } else if (score >= 50) {
+  } else if (score >= ALERT_SCORE) {
     el.scoreState.textContent = "Bien";
     el.scoreHint.textContent = "Cuidado: tu cabeza empieza a bajar.";
   } else {
