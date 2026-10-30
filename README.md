@@ -12,7 +12,7 @@ El proyecto tiene dos versiones:
 ### Funciones de la versión web
 
 - Video en vivo con esqueleto, línea de medición y medidor vertical del ratio.
-- **Puntaje de postura** de 0 a 100 (100 = tu postura calibrada, 50 = el umbral).
+- **Puntaje de postura** de 0 a 100 (100 = tu postura calibrada; la alarma salta por debajo de 80).
 - **Gráfico de los últimos 60 s** y línea de tiempo de toda la sesión.
 - Métricas: % de tiempo con buena postura, alertas, mejor racha e inclinación de hombros y cabeza.
 - Calibración con cuenta regresiva y ajustes de sensibilidad, retraso de la alerta y volumen.
