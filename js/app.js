@@ -107,6 +107,7 @@ let lastBeep = 0;
 let prevFrameTime = 0;
 let fps = 0;
 let calibration = null;
+let mainPoseMid = null;   // posición del usuario en el cuadro anterior (para no saltar a otra persona)
 
 function resetSession() {
   session = {
@@ -190,6 +191,35 @@ function analyzePosture(landmarks, width, height) {
 }
 
 // =============================================================================
+// ELEGIR AL USUARIO cuando la cámara ve a varias personas
+// La persona frente al computador es la más cercana (hombros más anchos en la
+// imagen) y suele estar centrada. Una vez elegida, la seguimos aunque alguien
+// pase por detrás, salvo que desaparezca.
+// =============================================================================
+function pickMainPose(poses) {
+  let best = null, bestScore = -Infinity;
+  for (const lm of poses) {
+    const l = lm[LEFT_SHOULDER], r = lm[RIGHT_SHOULDER];
+    if (!l || !r) continue;
+    const size = Math.hypot(l.x - r.x, l.y - r.y);            // ancho de hombros (0-1)
+    const mid = { x: (l.x + r.x) / 2, y: (l.y + r.y) / 2 };
+    let score = size * 3 - Math.abs(mid.x - 0.5);              // cerca y centrado
+    if (mainPoseMid) {
+      const jump = Math.hypot(mid.x - mainPoseMid.x, mid.y - mainPoseMid.y);
+      if (jump < 0.15) score += 1;                              // es la misma persona de antes
+    }
+    if (score > bestScore) { bestScore = score; best = lm; }
+  }
+  if (best) {
+    const l = best[LEFT_SHOULDER], r = best[RIGHT_SHOULDER];
+    mainPoseMid = { x: (l.x + r.x) / 2, y: (l.y + r.y) / 2 };
+  } else {
+    mainPoseMid = null;
+  }
+  return best;
+}
+
+// =============================================================================
 // MODELO Y CÁMARA
 // =============================================================================
 async function loadModel() {
@@ -198,7 +228,7 @@ async function loadModel() {
   const options = (delegate) => ({
     baseOptions: { modelAssetPath: MODEL_PATH, delegate },
     runningMode: "VIDEO",
-    numPoses: 1,
+    numPoses: 4,   // detecta a varias personas y luego elegimos al usuario (pickMainPose)
     minPoseDetectionConfidence: 0.5,
     minPosePresenceConfidence: 0.5,
     minTrackingConfidence: 0.5,
@@ -394,7 +424,7 @@ function update(result, now, dt) {
     el.canvas.height = h;
   }
 
-  const landmarks = result.landmarks?.[0];
+  const landmarks = pickMainPose(result.landmarks || []);
   metrics = landmarks ? analyzePosture(landmarks, w, h) : null;
 
   // --- Lógica de detección (igual que en Python) ---
