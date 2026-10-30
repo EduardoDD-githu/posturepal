@@ -191,14 +191,39 @@ function analyzePosture(landmarks, width, height) {
 }
 
 // =============================================================================
+// CONTROL DE CALIDAD: ¿es un cuerpo real o la IA mezcló a dos personas?
+// Cuando dos personas están muy juntas, la IA a veces arma un solo esqueleto con
+// partes de ambas (un ojo de cada una, hombros que abarcan a las dos). Un cuerpo
+// real cumple proporciones simples; si no las cumple, se descarta.
+// =============================================================================
+const LEFT_EYE = 2, RIGHT_EYE = 5;
+
+function isPlausible(lm, width, height) {
+  const P = (i) => ({ x: lm[i].x * width, y: lm[i].y * height });
+  const n = P(NOSE), le = P(LEFT_EYE), re = P(RIGHT_EYE), l = P(LEFT_SHOULDER), r = P(RIGHT_SHOULDER);
+  const sw = Math.hypot(l.x - r.x, l.y - r.y);
+  const eyeDist = Math.hypot(le.x - re.x, le.y - re.y);
+  if (sw < 1 || eyeDist < 1) return false;
+  const eyeMidX = (le.x + re.x) / 2, midX = (l.x + r.x) / 2;
+  return eyeDist / sw > 0.08 && eyeDist / sw < 0.33        // ojos juntos comparados con los hombros
+    && Math.abs(n.x - eyeMidX) < 0.6 * eyeDist             // nariz entre los ojos
+    && Math.abs(n.x - midX) < 0.3 * sw                     // cabeza sobre el centro de los hombros
+    && n.y < Math.min(l.y, r.y);                           // nariz por encima de los hombros
+}
+
+let mixedPeople = false;   // true si en este cuadro solo hubo esqueletos "mezclados"
+
+// =============================================================================
 // ELEGIR AL USUARIO cuando la cámara ve a varias personas
 // La persona frente al computador es la más cercana (hombros más anchos en la
 // imagen) y suele estar centrada. Una vez elegida, la seguimos aunque alguien
 // pase por detrás, salvo que desaparezca.
 // =============================================================================
-function pickMainPose(poses) {
+function pickMainPose(poses, width, height) {
   let best = null, bestScore = -Infinity;
-  for (const lm of poses) {
+  const valid = poses.filter((lm) => isPlausible(lm, width, height));
+  mixedPeople = poses.length > 0 && valid.length === 0;
+  for (const lm of valid) {
     const l = lm[LEFT_SHOULDER], r = lm[RIGHT_SHOULDER];
     if (!l || !r) continue;
     const size = Math.hypot(l.x - r.x, l.y - r.y);            // ancho de hombros (0-1)
@@ -424,11 +449,14 @@ function update(result, now, dt) {
     el.canvas.height = h;
   }
 
-  const landmarks = pickMainPose(result.landmarks || []);
+  const landmarks = pickMainPose(result.landmarks || [], w, h);
   metrics = landmarks ? analyzePosture(landmarks, w, h) : null;
 
   // --- Lógica de detección (igual que en Python) ---
-  if (metrics === null) {
+  if (mixedPeople) {
+    // Detección dudosa: no medimos ni alertamos, pero tampoco olvidamos al usuario
+    state = "NO_USER";
+  } else if (metrics === null) {
     state = "NO_USER";
     smoothedRatio = null;
   } else {
@@ -630,7 +658,7 @@ function render(badElapsed, now) {
 
   // Estado sobre el video
   el.status.dataset.state = calibration ? "CAL" : state;
-  el.statusText.textContent = calibration ? "Calibrando… quédate quieto" : STATE_TEXT[state];
+  el.statusText.textContent = calibration ? "Calibrando… quédate quieto" : mixedPeople ? "Hay otra persona muy cerca" : STATE_TEXT[state];
   el.badTimer.hidden = state !== "BAD";
   if (state === "BAD") el.badTimer.textContent = `${badElapsed.toFixed(1)} s`;
   el.stage.classList.toggle("alerting", state === "BAD" && badElapsed >= settings.delay);
