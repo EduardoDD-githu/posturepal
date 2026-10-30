@@ -932,19 +932,51 @@ window.addEventListener("resize", () => {
   drawTimeline(el.timeline, session.log);
 });
 
-// Instalación como app de escritorio (Chrome/Edge)
+// Instalación como app. Chrome/Edge en Android y computador ofrecen su propio
+// aviso (beforeinstallprompt); en iPhone y otros casos mostramos los pasos.
 let deferredInstall = null;
+const isStandalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+el.installBtn.hidden = isStandalone;   // ya abierta como app: no hace falta
+
 window.addEventListener("beforeinstallprompt", (e) => {
   e.preventDefault();
   deferredInstall = e;
-  el.installBtn.hidden = false;
 });
-el.installBtn.addEventListener("click", async () => {
-  if (!deferredInstall) return;
-  deferredInstall.prompt();
-  await deferredInstall.userChoice.catch(() => {});
-  deferredInstall = null;
+window.addEventListener("appinstalled", () => {
   el.installBtn.hidden = true;
+  showToast("PosturePal quedó instalada ✓");
+});
+
+function installSteps() {
+  if (isIOS) {
+    return "<ol><li>Abre esta página en <b>Safari</b>.</li><li>Toca <b>Compartir</b> (el cuadro con la flecha hacia arriba).</li><li>Elige <b>Agregar a pantalla de inicio</b> y toca <b>Agregar</b>.</li></ol>";
+  }
+  if (/android/i.test(navigator.userAgent)) {
+    return "<ol><li>Abre esta página en <b>Chrome</b>.</li><li>Toca el menú <b>⋮</b> arriba a la derecha.</li><li>Elige <b>Instalar app</b> o <b>Agregar a pantalla principal</b>.</li></ol>";
+  }
+  return "<ol><li>Usa <b>Chrome</b> o <b>Edge</b>.</li><li>Haz clic en el ícono de instalar al final de la barra de direcciones, o abre el menú <b>⋮</b> y elige <b>Instalar PosturePal</b>.</li><li>Si no aparece, es posible que ya esté instalada en este equipo.</li></ol>";
+}
+
+el.installBtn.addEventListener("click", async () => {
+  if (deferredInstall) {
+    deferredInstall.prompt();
+    await deferredInstall.userChoice.catch(() => {});
+    deferredInstall = null;
+    return;
+  }
+  $("install-steps").innerHTML = installSteps();
+  $("install-dialog").showModal();
+});
+
+// Código QR con la dirección de la página, para abrirla en el celular
+$("qr-btn").addEventListener("click", () => {
+  const url = new URL("./", location.href).href;
+  const box = $("qr-box");
+  box.innerHTML = "";
+  if (window.QRCode) new window.QRCode(box, { text: url, width: 240, height: 240, colorDark: "#07090c", colorLight: "#ffffff", correctLevel: window.QRCode.CorrectLevel.M });
+  $("qr-url").textContent = url.replace(/^https?:\/\//, "");
+  $("qr-dialog").showModal();
 });
 
 if ("serviceWorker" in navigator && window.isSecureContext) {

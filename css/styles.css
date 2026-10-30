@@ -518,3 +518,13 @@ body.pip .gauge-label, body.pip .hud-corners { display: none; }
   kbd, #help-btn { display: none !important; }
   .btn { min-height: 46px; }
 }
+
+/* ---------- Diálogos de QR e instalación ---------- */
+.dialog-text { color: var(--muted); margin: -8px 0 18px; }
+.dialog-text ol { margin: 0; padding-left: 1.3em; line-height: 1.7; color: var(--text); }
+.qr-box { display: grid; place-items: center; width: 272px; max-width: 100%; margin: 0 auto; padding: 16px; background: #fff; border-radius: 16px; }
+.qr-box img, .qr-box canvas { display: block; width: 240px; height: 240px; max-width: 100%; }
+.qr-url { margin: 14px 0 20px; text-align: center; font-size: 13px; color: var(--muted); word-break: break-all; }
+@media (max-width: 640px) {
+  .intro .topbar-actions #qr-btn { display: none; }
+}

@@ -1,7 +1,7 @@
 // Service worker de PosturePal: guarda la app en el dispositivo para que
 // funcione sin internet después de la primera visita.
 // Si cambias archivos de la app, sube el número de versión para forzar la actualización.
-const CACHE = "posturepal-v3";
+const CACHE = "posturepal-v4";
 
 const APP_SHELL = [
   "./",

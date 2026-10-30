@@ -10,7 +10,7 @@
   <link rel="icon" id="favicon" href="icons/icon-192.png" type="image/png">
   <link rel="preload" href="fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="css/styles.css?v=5">
+  <link rel="stylesheet" href="css/styles.css?v=6">
 </head>
 <body data-state="idle">
   <div class="ambient" aria-hidden="true"></div>
@@ -23,7 +23,8 @@
         <span>PosturePal</span>
       </div>
       <nav class="topbar-actions">
-        <button id="install-btn" class="btn btn-quiet btn-sm" type="button" hidden>Instalar app</button>
+        <button id="qr-btn" class="btn btn-quiet btn-sm" type="button">Abrir en el celular</button>
+        <button id="install-btn" class="btn btn-quiet btn-sm" type="button">Instalar app</button>
       </nav>
     </header>
 
@@ -284,6 +285,20 @@
   </div>
 
   <!-- =========================== DIÁLOGOS =========================== -->
+  <dialog id="qr-dialog" class="dialog" aria-labelledby="qr-title">
+    <h2 id="qr-title">Pruébalo en tu celular</h2>
+    <p class="dialog-text">Escanea el código con la cámara de tu teléfono.</p>
+    <div id="qr-box" class="qr-box" role="img" aria-label="Código QR con la dirección de PosturePal"></div>
+    <p class="qr-url mono" id="qr-url"></p>
+    <form method="dialog"><button class="btn btn-block" type="submit">Cerrar</button></form>
+  </dialog>
+
+  <dialog id="install-dialog" class="dialog" aria-labelledby="install-title">
+    <h2 id="install-title">Instalar PosturePal</h2>
+    <div id="install-steps" class="dialog-text"></div>
+    <form method="dialog"><button class="btn btn-block" type="submit">Entendido</button></form>
+  </dialog>
+
   <dialog id="help-dialog" class="dialog" aria-labelledby="help-title">
     <h2 id="help-title">Atajos de teclado</h2>
     <dl class="shortcuts">
@@ -320,6 +335,7 @@
   <div id="sr-announcer" class="sr-only" role="status" aria-live="polite"></div>
   <div id="sr-alert" class="sr-only" role="alert"></div>
 
-  <script type="module" src="js/app.js?v=3"></script>
+  <script src="vendor/qrcode.min.js"></script>
+  <script type="module" src="js/app.js?v=4"></script>
 </body>
 </html>
